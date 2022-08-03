@@ -884,8 +884,8 @@ bool arrow(Numeric x, Numeric y, Numeric end_x, Numeric end_y, const std::string
 }
 
 template< typename Numeric>
-bool hist(const std::vector<Numeric>& y, long bins=10,std::string color="b",
-          double alpha=1.0, bool cumulative=false)
+bool hist(const std::vector<Numeric>& y, const long bins=10, 
+          std::string color="b", double alpha=1.0, bool cumulative=false)
 {
     detail::_interpreter::get();
 
@@ -901,9 +901,39 @@ bool hist(const std::vector<Numeric>& y, long bins=10,std::string color="b",
 
     PyTuple_SetItem(plot_args, 0, yarray);
 
+    PyObject* res = PyObject_Call(
+        detail::_interpreter::get().s_python_function_hist, plot_args, kwargs
+    );
 
-    PyObject* res = PyObject_Call(detail::_interpreter::get().s_python_function_hist, plot_args, kwargs);
+    Py_DECREF(plot_args);
+    Py_DECREF(kwargs);
+    if(res) Py_DECREF(res);
 
+    return res;
+}
+
+template< typename Numeric>
+bool hist(const std::vector<Numeric>& y, const std::vector<double>& bin_ticks, 
+          std::string color="b", double alpha=1.0, bool cumulative=false)
+{
+    detail::_interpreter::get();
+
+    PyObject* yarray = detail::get_array(y);
+    PyObject* bin_array = detail::get_array(bin_ticks);
+
+    PyObject* kwargs = PyDict_New();
+    PyDict_SetItemString(kwargs, "bins", bin_array);
+    PyDict_SetItemString(kwargs, "color", PyString_FromString(color.c_str()));
+    PyDict_SetItemString(kwargs, "alpha", PyFloat_FromDouble(alpha));
+    PyDict_SetItemString(kwargs, "cumulative", cumulative ? Py_True : Py_False);
+
+    PyObject* plot_args = PyTuple_New(1);
+
+    PyTuple_SetItem(plot_args, 0, yarray);
+
+    PyObject* res = PyObject_Call(
+        detail::_interpreter::get().s_python_function_hist, plot_args, kwargs
+    );
 
     Py_DECREF(plot_args);
     Py_DECREF(kwargs);
